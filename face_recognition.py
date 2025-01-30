@@ -43,7 +43,7 @@ def main():
         # Display the uploaded image
         image = Image.open(uploaded_image)
         width, height = image.size  # Get image dimensions
-        st.image(image, caption="Uploaded Image", use_column_width=True)
+        st.image(image, caption="Uploaded Image", use_container_width=True)
 
         if st.button("Analyze Skin"):
             with st.spinner("Analyzing your skin..."):
