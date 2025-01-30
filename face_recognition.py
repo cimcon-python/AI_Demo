@@ -6,13 +6,16 @@ import json
 import re
 from langchain_google_genai import ChatGoogleGenerativeAI
 from prompts import *
+import os
 # Load environment variables
 load_dotenv()
 
 # Configure Generative AI
-genai.configure(api_key="AIzaSyCHvis0l74Z4JAETgbbES_PPxaJgi-dD90")
+api_key = os.getenv("GOOGLE_API_KEY")
+
+genai.configure(api_key=api_key)
 model = genai.GenerativeModel(model_name="gemini-1.5-pro")
-chat_llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest", temperature=0.5, max_output_tokens=8192)
+# chat_llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest", temperature=0.5, max_output_tokens=8192)
 # Function to analyze skin and provide recommendations
 def analyze_skin_and_recommend(image, prompt):
     try:
@@ -38,7 +41,7 @@ def main():
         # Display the uploaded image
         image = Image.open(uploaded_image)
         width, height = image.size  # Get image dimensions
-        st.image(image, caption="Uploaded Image", use_container_width =True)
+        st.image(image, caption="Uploaded Image", use_column_width=True)
 
         if st.button("Analyze Skin"):
             with st.spinner("Analyzing your skin..."):
