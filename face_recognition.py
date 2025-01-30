@@ -7,7 +7,11 @@ import re
 from langchain_google_genai import ChatGoogleGenerativeAI
 from prompts import *
 import os
-# Load environment variables
+import warnings
+
+st.set_option('deprecation.showPyplotGlobalUse', False)  # Example for other warnings
+warnings.filterwarnings("ignore", message="The use_column_width parameter has been deprecated")
+
 load_dotenv()
 
 # Configure Generative AI
