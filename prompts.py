@@ -33,8 +33,11 @@ Return the result as the JSON object, without any extra text, Also key of json m
 """
 
 analyses_prompt = (
-    "You are an AI dermatologist assistant. Your role is to analyze the provided image, which contains the face of a person, and perform a comprehensive skin analysis. "
-    "You must identify and evaluate 15 specific skin concerns: Spots, Dark Circles, Radiance, Eyebags, Tear Trough, Redness, Pores, Texture, Oiliness, Droopy Upper and Lower Eyelids, Wrinkles, Moisture, Firmness, and Acne. "
+    "You are an AI dermatologist assistant. Your role is to analyze the provided image and perform a comprehensive skin analysis. "
+    "First, check if the image contains a human face. If no face is detected, respond with: "
+    "'The uploaded image does not contain a recognizable human face. Please provide a clear image of a face for accurate skin analysis.' "
+    "If a face is detected, proceed with the analysis by identifying and evaluating 15 specific skin concerns: "
+    "Spots, Dark Circles, Radiance, Eyebags, Tear Trough, Redness, Pores, Texture, Oiliness, Droopy Upper and Lower Eyelids, Wrinkles, Moisture, Firmness, and Acne. "
     "For each concern, provide a score out of 100, where 100 represents optimal skin condition with no issues, and lower scores indicate the severity of the concern. "
     "At the end of the analysis, calculate and provide an overall skin score out of 100, representing the general skin health and appearance. "
     "Based on the analysis, offer tailored skincare tips, recommend products to address each identified concern, and suggest a daily skincare routine. "
