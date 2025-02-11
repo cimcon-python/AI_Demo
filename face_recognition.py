@@ -1,11 +1,11 @@
-import streamlit as st
+import gradio as gr
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
 from PIL import Image
 import re
-import io
 from prompts import *
+import markdown
 # Load environment variables
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
@@ -14,9 +14,9 @@ api_key = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel(model_name="gemini-1.5-pro")
 
-def analyze_skin_and_recommend(image, prompt):
+def analyze_skin_and_recommend(image):
     try:
-        response = model.generate_content([image, prompt])  # Send image directly
+        response = model.generate_content([image, analyses_prompt])  # Send image directly
         return response.text
     except Exception as e:
         return f"Error: {str(e)}"
@@ -24,26 +24,76 @@ def analyze_skin_and_recommend(image, prompt):
 def remove_coordinates_from_result(result):
     return re.sub(r'\[\d+, \d+, \d+, \d+\]', '', result).strip()
 
-# Streamlit App
-def main():
-    st.title("AI Skin Analysis and Recommendation App")
-    st.write("Click 'Capture Image' to take a photo using your webcam.")
+# Gradio UI
+def process_image(image):
+    if image is None:
+        return "No image provided. Please capture an image."
+    
+    result = analyze_skin_and_recommend(image)
+    result = remove_coordinates_from_result(result)
+    result = result.replace('*','')
+    #result = markdown.markdown(result)
 
-    # Use Streamlit's built-in camera input
-    captured_image = st.camera_input("Take a photo")
+    return result
 
-    if captured_image is not None:
-        image = Image.open(captured_image)
-        st.image(image, caption="Captured Image", use_column_width=True)
+iface = gr.Interface(
+    fn=process_image,
+    inputs=gr.Image(type="pil", label="Capture Image"),  # Webcam input
+    outputs="text",
+    title="AI Skin Analysis and Recommendation App",
+    description="Capture an image using your webcam and get a skin analysis with recommendations."
+)
 
-        if st.button("Analyze Skin"):
-            with st.spinner("Analyzing your skin..."):
-                result = analyze_skin_and_recommend(image, analyses_prompt)
-                result = remove_coordinates_from_result(result)
-                st.write(result)
-
+# Launch Gradio App
 if __name__ == "__main__":
-    main()
+    iface.launch(share=True)
+
+# import streamlit as st
+# import google.generativeai as genai
+# from dotenv import load_dotenv
+# import os
+# from PIL import Image
+# import re
+# import io
+# from prompts import *
+# # Load environment variables
+# load_dotenv()
+# api_key = os.getenv("GOOGLE_API_KEY")
+
+# # Configure Generative AI
+# genai.configure(api_key=api_key)
+# model = genai.GenerativeModel(model_name="gemini-1.5-pro")
+
+# def analyze_skin_and_recommend(image, prompt):
+#     try:
+#         response = model.generate_content([image, prompt])  # Send image directly
+#         return response.text
+#     except Exception as e:
+#         return f"Error: {str(e)}"
+
+# def remove_coordinates_from_result(result):
+#     return re.sub(r'\[\d+, \d+, \d+, \d+\]', '', result).strip()
+
+# # Streamlit App
+# def main():
+#     st.title("AI Skin Analysis and Recommendation App")
+#     st.write("Click 'Capture Image' to take a photo using your webcam.")
+
+#     # Use Streamlit's built-in camera input
+#     captured_image = st.camera_input("Take a photo")
+
+#     if captured_image is not None:
+#         image = Image.open(captured_image)
+#         st.image(image, caption="Captured Image", use_column_width=True)
+
+#         if st.button("Analyze Skin"):
+#             with st.spinner("Analyzing your skin..."):
+#                 result = analyze_skin_and_recommend(image, analyses_prompt)
+#                 result = remove_coordinates_from_result(result)
+#                 st.write(result)
+
+# if __name__ == "__main__":
+#     main()
 
 
 # import streamlit as st
