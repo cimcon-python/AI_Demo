@@ -1,11 +1,66 @@
-import gradio as gr
+# import gradio as gr
+# import google.generativeai as genai
+# from dotenv import load_dotenv
+# import os
+# from PIL import Image
+# import re
+# from prompts import *
+# import markdown
+# # Load environment variables
+# load_dotenv()
+# api_key = os.getenv("GOOGLE_API_KEY")
+
+# # Configure Generative AI
+# genai.configure(api_key=api_key)
+# model = genai.GenerativeModel(model_name="gemini-1.5-pro")
+
+# def analyze_skin_and_recommend(image):
+#     try:
+#         response = model.generate_content([image, analyses_prompt])  # Send image directly
+#         return response.text
+#     except Exception as e:
+#         return f"Error: {str(e)}"
+
+# def remove_coordinates_from_result(result):
+#     return re.sub(r'\[\d+, \d+, \d+, \d+\]', '', result).strip()
+
+# # Gradio UI
+# def process_image(image):
+#     if image is None:
+#         return "No image provided. Please capture an image."
+    
+#     result = analyze_skin_and_recommend(image)
+#     result = remove_coordinates_from_result(result)
+#     result = result.replace('*','')
+#     #result = markdown.markdown(result)
+
+#     return result
+
+# iface = gr.Interface(
+#     fn=process_image,
+#     inputs=gr.Image(type="pil", label="Capture Image"),  # Webcam input
+#     outputs="text",
+#     title="AI Skin Analysis and Recommendation App",
+#     description="Capture an image using your webcam and get a skin analysis with recommendations."
+# )
+
+# # Launch Gradio App
+# if __name__ == "__main__":
+#     iface.launch(share=True)
+
+import streamlit as st
+import cv2
+import numpy as np
+from PIL import Image
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
-from PIL import Image
-import re
 from prompts import *
-import markdown
+import time
+from prompts import *
+import re
+import io
+
 # Load environment variables
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
@@ -14,9 +69,9 @@ api_key = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel(model_name="gemini-1.5-pro")
 
-def analyze_skin_and_recommend(image):
+def analyze_skin_and_recommend(image, prompt):
     try:
-        response = model.generate_content([image, analyses_prompt])  # Send image directly
+        response = model.generate_content([image, prompt])  # Send image directly
         return response.text
     except Exception as e:
         return f"Error: {str(e)}"
@@ -24,154 +79,51 @@ def analyze_skin_and_recommend(image):
 def remove_coordinates_from_result(result):
     return re.sub(r'\[\d+, \d+, \d+, \d+\]', '', result).strip()
 
-# Gradio UI
-def process_image(image):
-    if image is None:
-        return "No image provided. Please capture an image."
-    
-    result = analyze_skin_and_recommend(image)
-    result = remove_coordinates_from_result(result)
-    result = result.replace('*','')
-    #result = markdown.markdown(result)
+def capture_image():
+    cap = cv2.VideoCapture(0)  # Open the webcam
 
-    return result
+    if not cap.isOpened():
+        st.error("Could not open webcam")
+        return None
 
-iface = gr.Interface(
-    fn=process_image,
-    inputs=gr.Image(type="pil", label="Capture Image"),  # Webcam input
-    outputs="text",
-    title="AI Skin Analysis and Recommendation App",
-    description="Capture an image using your webcam and get a skin analysis with recommendations."
-)
+    st.write("Camera will capture image in 3 seconds...")
+    time.sleep(3)  # Wait for 3 seconds
 
-# Launch Gradio App
+    ret, frame = cap.read()  # Capture frame
+    cap.release()  # Release the webcam
+
+    if not ret:
+        st.error("Failed to capture image")
+        return None
+
+    # Convert BGR to RGB (OpenCV loads images in BGR format)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    image = Image.fromarray(frame)  # Convert to PIL Image
+
+    return image
+
+# Streamlit App
+def main():
+    st.title("AI Skin Analysis and Recommendation App")
+    st.write("Click 'Capture Image' to take a photo using your webcam.")
+
+    if "captured_image" not in st.session_state:
+        st.session_state.captured_image = None  # Store captured image persistently
+
+    if st.button("Capture Image"):
+        st.session_state.captured_image = capture_image()
+
+    if st.session_state.captured_image:
+        st.image(st.session_state.captured_image, caption="Captured Image", use_column_width=True)
+
+        if st.button("Analyze Skin"):
+            with st.spinner("Analyzing your skin..."):
+                result = analyze_skin_and_recommend(st.session_state.captured_image, analyses_prompt)
+                result = remove_coordinates_from_result(result)
+                st.write(result)
+
 if __name__ == "__main__":
-    iface.launch(share=True)
-
-# import streamlit as st
-# import google.generativeai as genai
-# from dotenv import load_dotenv
-# import os
-# from PIL import Image
-# import re
-# import io
-# from prompts import *
-# # Load environment variables
-# load_dotenv()
-# api_key = os.getenv("GOOGLE_API_KEY")
-
-# # Configure Generative AI
-# genai.configure(api_key=api_key)
-# model = genai.GenerativeModel(model_name="gemini-1.5-pro")
-
-# def analyze_skin_and_recommend(image, prompt):
-#     try:
-#         response = model.generate_content([image, prompt])  # Send image directly
-#         return response.text
-#     except Exception as e:
-#         return f"Error: {str(e)}"
-
-# def remove_coordinates_from_result(result):
-#     return re.sub(r'\[\d+, \d+, \d+, \d+\]', '', result).strip()
-
-# # Streamlit App
-# def main():
-#     st.title("AI Skin Analysis and Recommendation App")
-#     st.write("Click 'Capture Image' to take a photo using your webcam.")
-
-#     # Use Streamlit's built-in camera input
-#     captured_image = st.camera_input("Take a photo")
-
-#     if captured_image is not None:
-#         image = Image.open(captured_image)
-#         st.image(image, caption="Captured Image", use_column_width=True)
-
-#         if st.button("Analyze Skin"):
-#             with st.spinner("Analyzing your skin..."):
-#                 result = analyze_skin_and_recommend(image, analyses_prompt)
-#                 result = remove_coordinates_from_result(result)
-#                 st.write(result)
-
-# if __name__ == "__main__":
-#     main()
-
-
-# import streamlit as st
-# import cv2
-# import numpy as np
-# from PIL import Image
-# import google.generativeai as genai
-# from dotenv import load_dotenv
-# import os
-# from prompts import *
-# import time
-# from prompts import *
-# import re
-# import io
-
-# # Load environment variables
-# load_dotenv()
-# api_key = os.getenv("GOOGLE_API_KEY")
-
-# # Configure Generative AI
-# genai.configure(api_key=api_key)
-# model = genai.GenerativeModel(model_name="gemini-1.5-pro")
-
-# def analyze_skin_and_recommend(image, prompt):
-#     try:
-#         response = model.generate_content([image, prompt])  # Send image directly
-#         return response.text
-#     except Exception as e:
-#         return f"Error: {str(e)}"
-
-# def remove_coordinates_from_result(result):
-#     return re.sub(r'\[\d+, \d+, \d+, \d+\]', '', result).strip()
-
-# def capture_image():
-#     cap = cv2.VideoCapture(0)  # Open the webcam
-
-#     if not cap.isOpened():
-#         st.error("Could not open webcam")
-#         return None
-
-#     st.write("Camera will capture image in 3 seconds...")
-#     time.sleep(3)  # Wait for 3 seconds
-
-#     ret, frame = cap.read()  # Capture frame
-#     cap.release()  # Release the webcam
-
-#     if not ret:
-#         st.error("Failed to capture image")
-#         return None
-
-#     # Convert BGR to RGB (OpenCV loads images in BGR format)
-#     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#     image = Image.fromarray(frame)  # Convert to PIL Image
-
-#     return image
-
-# # Streamlit App
-# def main():
-#     st.title("AI Skin Analysis and Recommendation App")
-#     st.write("Click 'Capture Image' to take a photo using your webcam.")
-
-#     if "captured_image" not in st.session_state:
-#         st.session_state.captured_image = None  # Store captured image persistently
-
-#     if st.button("Capture Image"):
-#         st.session_state.captured_image = capture_image()
-
-#     if st.session_state.captured_image:
-#         st.image(st.session_state.captured_image, caption="Captured Image", use_column_width=True)
-
-#         if st.button("Analyze Skin"):
-#             with st.spinner("Analyzing your skin..."):
-#                 result = analyze_skin_and_recommend(st.session_state.captured_image, analyses_prompt)
-#                 result = remove_coordinates_from_result(result)
-#                 st.write(result)
-
-# if __name__ == "__main__":
-#     main()
+    main()
 
 
 # import streamlit as st
