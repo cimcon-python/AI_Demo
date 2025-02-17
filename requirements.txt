@@ -39,3 +39,4 @@ drf-user-activity-tracker
 openpyxl
 posthog
 websockets
+google-genai==0.2.2
