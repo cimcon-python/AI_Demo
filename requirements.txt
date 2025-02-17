@@ -38,3 +38,4 @@ ffmpeg-python
 drf-user-activity-tracker
 openpyxl
 posthog
+websockets
